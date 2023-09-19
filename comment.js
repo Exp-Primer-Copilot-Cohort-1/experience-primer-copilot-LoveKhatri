@@ -3,52 +3,44 @@
 // Import modules
 const express = require('express');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
 
-// Import models
-const Comment = require('../models/comment');
+// Import database
+const db = require('./db');
 
-// Create router
-const commentRouter = express.Router();
+// Create web server
+const app = express();
 
-// Use body-parser
-commentRouter.use(bodyParser.json());
+// Set port
+const port = 3000;
 
-// Create routes
-commentRouter.route('/')
-    .get((req, res, next) => {
-        Comment.find({})
-            .then((comments) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(comments);
-            }, (err) => next(err))
-            .catch((err) => next(err));
-    }
-    )
-    .post((req, res, next) => {
-        Comment.create(req.body)
-            .then((comment) => {
-                console.log('Comment created', comment);
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(comment);
-            }, (err) => next(err))
-            .catch((err) => next(err));
-    }
-    )
-    .put((req, res, next) => {
-        res.statusCode = 403;
-        res.end('PUT operation not supported on /comments');
-    }
-    )
-    .delete((req, res, next) => {
-        Comment.remove({})
-            .then((resp) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(resp);
-            }, (err) => next(err))
-            .catch((err) => next(err));
-    }
-    );
+// Set body parser
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Set view engine
+app.set('view engine', 'pug');
+app.set('views', './views');
+
+// Set static file
+app.use(express.static('public'));
+
+// Set routes
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+app.get('/comments', (req, res) => {
+    res.render('comments', {
+        comments: db.get('comments').value()
+    });
+});
+
+app.post('/comments', (req, res) => {
+    db.get('comments').push(req.body).write();
+    res.redirect('/comments');
+});
+
+// Listen port
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
